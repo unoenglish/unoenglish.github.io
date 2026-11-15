@@ -44,12 +44,35 @@ button.main{background:var(--accent);border-color:var(--accent);color:#fff}
 .q{margin:14px 0;font-family:system-ui,sans-serif}.q button{margin:4px 6px 4px 0}
 .q button.ok{background:var(--accent-bg);border-color:var(--accent);color:var(--accent-ink)}
 .q button.bad{border-color:#c0504d}
+.link{border:0;background:none;color:var(--accent);padding:10px 0;font-size:16px}
+.tg{position:relative;display:inline-block}
+.tb{font:inherit;font-size:13px;color:var(--accent);background:none;border:0;border-bottom:1px dashed var(--accent);padding:4px 2px;cursor:pointer}
+.tp{display:none;position:absolute;bottom:100%;left:0;margin-bottom:4px;width:236px;max-width:80vw;box-sizing:border-box;background:#1d2b2a;color:#f6f4ee;font:13px/1.45 system-ui,sans-serif;border-radius:8px;padding:10px 12px;z-index:5;text-align:left;white-space:normal}
+.tg.open .tp{display:block}
+@media (hover:hover){.tg:hover .tp{display:block}}
+.vrow{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0;font-family:system-ui,sans-serif}
+.vw{font:bold 20px Georgia,serif}
+.vmeta{display:flex;gap:10px;align-items:center;margin-top:4px}
+.badge{font-size:12px;border-radius:6px;padding:2px 8px}
+.bw{background:#fbe9d0;color:#7a3d0a}.bn{background:#e8e6dc;color:#3d4745}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bw{background:#4a3318;color:#f5d9b0}:root:not([data-theme="light"]) .bn{background:#2f3a38;color:#d3dcda}}
+.learn{border-color:var(--accent);color:var(--accent)}
+.danger{color:#c0504d}
+.saved{font-family:system-ui,sans-serif;font-size:15px;margin:10px 0}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
+.ov[hidden]{display:none}
+.dlg{background:var(--surface);color:var(--ink);border-radius:12px;padding:22px;max-width:420px;width:100%;font-family:system-ui,sans-serif}
+.dlg input{font:16px system-ui,sans-serif;width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--line);border-radius:8px;margin:6px 0 14px;background:var(--bg);color:var(--ink)}
+.wl{display:grid;grid-template-columns:max-content 1fr auto;gap:10px 18px;align-items:center;font-family:system-ui,sans-serif;font-size:16px;margin:6px 0 14px}
+.ww{font-family:Georgia,serif;font-weight:bold}
 </style>
 </head>
 <body>
 <main>
+  <div id="home">
   <h1>Ты уже знаешь английский</h1>
   <p class="sub">Прочитай текст и нажми на каждое слово, которое понимаешь. Нажми ещё раз, чтобы снять отметку.</p>
+  <button class="link" id="openvocab">Мой словарь</button>
   <div class="card">
     <div class="meta" id="meta"></div>
     <div class="text" id="text"></div>
@@ -59,7 +82,11 @@ button.main{background:var(--accent);border-color:var(--accent);color:#fff}
     </div>
   </div>
   <div id="result" role="status" aria-live="polite"></div>
+</div>
+<div id="vocab" hidden></div>
 </main>
+<div id="welcome" class="ov" hidden><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="wt"><h2 id="wt" style="margin:0 0 10px;font-size:22px">Перед началом</h2><p style="margin:0 0 10px">Отмечай и те слова, в которых не совсем уверен: мы проверим несколько из них, и ты увидишь, что знаешь больше, чем думаешь.</p><label for="wname">Как тебя зовут? Имя попадёт в сообщение преподавателю, которое ты отправляешь сам.</label><input id="wname" maxlength="40" autocomplete="given-name"><button class="main" id="wgo">Начать</button></div></div>
+<div id="sendbox" class="ov" hidden><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="stt"><h2 id="stt" style="margin:0 0 10px;font-size:20px">Сообщение преподавателю</h2><p style="margin:0 0 8px;font-size:14px">Вот что будет отправлено. Скопируй и вставь в чат с преподавателем.</p><textarea id="smsg" readonly rows="8" style="width:100%;box-sizing:border-box;font:14px/1.4 system-ui,sans-serif;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"></textarea><p id="sstat" role="status" style="min-height:1.4em;font-size:14px;margin:8px 0"></p><div class="row"><button class="main" id="scopy">Скопировать</button><button id="sshare" hidden>Поделиться</button><button id="sclose">Закрыть</button></div></div></div>
 <script>
 var TEXTS = [
 "Anna wakes up at seven. She drinks coffee and goes to work by bus. In the evening she watches a film with her friend.",
@@ -73,7 +100,20 @@ var TEXTS = [
 "David wants to buy a new phone. His old phone is slow and the screen is broken. He is saving money every month.",
 "We are planning a trip to the mountains. We will take warm clothes, some food and a map. I hope the weather will be sunny.",
 "My neighbour is very friendly. She often brings us cakes and asks about our day. Yesterday she lost her keys, so we helped her look for them.",
-"Lena goes to the gym three times a week. She says it makes her feel strong and happy. After training she drinks a glass of water and goes home."
+"Lena goes to the gym three times a week. She says it makes her feel strong and happy. After training she drinks a glass of water and goes home.",
+"Mark goes to the supermarket on Saturday. He buys bread, cheese and apples. The shop is busy, so he waits in a long queue.",
+"Julia has a bad cold. She stays in bed and drinks hot tea with lemon. Tomorrow she will call the doctor.",
+"It is my birthday today. My friends give me flowers and a big cake. We sing, dance and laugh until midnight.",
+"Our teacher is very kind. She explains the lesson slowly and answers every question. After class we write a short test.",
+"We are at the airport. The plane leaves at noon, but there is a delay. I read a magazine and drink a cup of tea.",
+"My grandfather lives in a village. He grows tomatoes and keeps ten chickens. In summer I help him in the garden.",
+"Peter likes music. He plays the guitar every evening and sings quietly. His neighbours never complain.",
+"The library is quiet and warm. I borrow three books and sit near the window. Then I study for two hours.",
+"Yesterday we went to the cinema. The film was long, but the story was interesting. Afterwards we had pizza and talked about it.",
+"My brother cleans his room on Sunday. He puts his clothes in the wardrobe and opens the window. Then he feels tired but proud.",
+"There is a big market in the city centre. You can buy fresh fruit, fish and cheap clothes there. It is crowded on weekends.",
+"Emma is a nurse. She works at night and sleeps during the day. She says her job is hard, but she loves it.",
+"We missed the last bus, so we walked home. The road was dark and the air was cold. Luckily, it did not rain."
 ];
 var idx = Math.floor(Math.random() * TEXTS.length);
 var textEl = document.getElementById("text");
@@ -220,15 +260,126 @@ strong:сильный|слабый|усталый|быстрый
 happy:счастливый|грустный|сердитый|усталый
 training:тренировка|урок|экзамен|отпуск
 glass:стакан|чашка|бутылка|тарелка
-water:вода|сок|молоко|чай`;
+water:вода|сок|молоко|чай
+saturday:суббота|воскресенье|пятница|среда
+supermarket:супермаркет|аптека|рынок|банк
+buys:покупает|продаёт|ищет|теряет
+bread:хлеб|сыр|рис|мёд
+cheese:сыр|хлеб|масло|мясо
+apples:яблоки|груши|лимоны|бананы
+shop:магазин|школа|банк|почта
+busy:оживлённый|тихий|закрытый|пустой
+waits:ждёт|бежит|сидит|уходит
+long:длинный|короткий|узкий|тихий
+queue:очередь|толпа|касса|дверь
+bad:плохой|хороший|лёгкий|быстрый
+cold:простуда|кашель|температура|боль
+bed:кровать|стол|диван|шкаф
+tea:чай|кофе|сок|молоко
+lemon:лимон|яблоко|апельсин|груша
+tomorrow:завтра|вчера|сегодня|потом
+call:звонить|писать|ждать|искать
+doctor:врач|учитель|повар|юрист
+stays:остаётся|уходит|едет|возвращается
+birthday:день рождения|праздник|свадьба|каникулы
+give:дают|берут|теряют|продают
+flowers:цветы|подарки|открытки|конфеты
+big:большой|маленький|тёплый|старый
+cake:торт|пирог|булочка|печенье
+sing:поём|танцуем|смеёмся|играем
+dance:танцуем|поём|смеёмся|бегаем
+laugh:смеёмся|плачем|кричим|шепчем
+midnight:полночь|полдень|вечер|рассвет
+teacher:учитель|врач|водитель|продавец
+kind:добрый|строгий|злой|ленивый
+explains:объясняет|читает|пишет|спрашивает
+lesson:урок|экзамен|каникулы|перемена
+slowly:медленно|быстро|громко|тихо
+answers:отвечает|спрашивает|говорит|просит
+question:вопрос|ответ|урок|задача
+class:занятия|каникулы|экзамен|перемена
+write:писать|читать|рисовать|говорить
+short:короткий|длинный|трудный|лёгкий
+test:тест|урок|вопрос|ответ
+airport:аэропорт|вокзал|порт|площадь
+plane:самолёт|поезд|автобус|корабль
+leaves:отправляется|приезжает|ждёт|возвращается
+noon:полдень|полночь|утро|вечер
+delay:задержка|отмена|посадка|билет
+magazine:журнал|газета|книга|карта
+cup:чашка|стакан|бутылка|тарелка
+drink:пить|есть|варить|покупать
+grandfather:дедушка|отец|дядя|сосед
+village:деревня|город|улица|страна
+grows:выращивает|покупает|продаёт|ест
+tomatoes:помидоры|огурцы|яблоки|морковь
+keeps:держит|продаёт|ест|покупает
+ten:десять|двенадцать|двадцать|пять
+chickens:куры|утки|коровы|овцы
+garden:сад|парк|лес|двор
+help:помогать|просить|ждать|советовать
+likes:любит|ненавидит|боится|знает
+music:музыка|песня|тишина|шум
+guitar:гитара|скрипка|барабан|пианино
+sings:поёт|играет|кричит|читает
+quietly:тихо|громко|быстро|поздно
+never:никогда|всегда|иногда|часто
+complain:жаловаться|отвечать|помогать|просить
+neighbours:соседи|друзья|гости|родственники
+library:библиотека|школа|музей|магазин
+quiet:тихий|шумный|тёмный|холодный
+borrow:брать на время|покупать|терять|дарить
+books:книги|журналы|газеты|тетради
+sit:сидеть|стоять|лежать|идти
+window:окно|дверь|стол|стена
+study:учиться|играть|отдыхать|работать
+two:два|три|один|пять
+hours:часы|минуты|дни|недели
+went:пошли|остались|вернулись|убежали
+cinema:кинотеатр|театр|музей|цирк
+story:история|песня|игра|картина
+interesting:интересный|скучный|страшный|смешной
+afterwards:после этого|до этого|вместо этого|вместе
+had:съели|купили|приготовили|заказали
+talked:говорили|ели|пели|смотрели
+cleans:убирает|красит|продаёт|покупает
+room:комната|кухня|улица|дом
+puts:кладёт|берёт|теряет|ищет
+wardrobe:шкаф|стол|кровать|диван
+opens:открывает|закрывает|ломает|моет
+tired:усталый|голодный|сердитый|весёлый
+proud:гордый|злой|грустный|удивлённый
+sunday:воскресенье|суббота|понедельник|пятница
+feels:чувствует|думает|видит|слышит
+market:рынок|магазин|вокзал|парк
+city:город|деревня|страна|улица
+centre:центр|край|площадь|окраина
+fresh:свежий|старый|сладкий|острый
+fruit:фрукты|овощи|мясо|рыба
+fish:рыба|мясо|птица|сыр
+cheap:дешёвый|дорогой|новый|красивый
+crowded:многолюдный|пустой|тихий|тёмный
+weekends:выходные|будни|праздники|каникулы
+nurse:медсестра|учительница|повар|продавщица
+night:ночь|день|утро|вечер
+job:работа|отпуск|урок|учёба
+hard:тяжёлый|лёгкий|мягкий|быстрый
+loves:любит|боится|знает|ненавидит
+missed:упустили|поймали|купили|потеряли
+walked:пошли пешком|поехали|побежали|поплыли
+road:дорога|улица|мост|площадь
+dark:тёмный|светлый|тихий|холодный
+air:воздух|ветер|вода|дым
+luckily:к счастью|к сожалению|вдруг|поэтому
+rain:дождь|снег|ветер|туман`;
 var DICT = {};
 RAW.split("\n").forEach(function (l) { var p = l.split(":"); DICT[p[0]] = p[1].split("|"); });
 
 var FUNC = {};
-"a:(артикль) один|an:(артикль) один|the:(артикль)|and:и|to:к; чтобы|at:в; у|by:на (транспорте); рядом|in:в|on:на|of:из; (принадлежность)|for:для; на|with:с|about:о; про|up:вверх|near:рядом с|she:она|he:он|her:её; ей|his:его|they:они|we:мы|i:я|my:мой|our:наш|it:это; оно|us:нас; нам|them:их; им|am:есть (я)|is:есть; является|are:есть (мы)|was:был|be:быть|will:будет|has:имеет|so:поэтому|but:но|very:очень|there:там|called:называется|half:половина|lot:много|makes:делает|look:смотреть; искать|works:работает|cafe:кафе|last:прошлый|italy:Италия|some:немного; некоторые".split("|").forEach(function (e) { var p = e.split(":"); FUNC[p[0]] = p[1]; });
+"a:(артикль) один|an:(артикль) один|the:(артикль)|and:и|to:к; чтобы|at:в; у|by:на (транспорте); рядом|in:в|on:на|of:из; (принадлежность)|for:для; на|with:с|about:о; про|up:вверх|near:рядом с|she:она|he:он|her:её; ей|his:его|they:они|we:мы|i:я|my:мой|our:наш|it:это; оно|us:нас; нам|them:их; им|am:есть (я)|is:есть; является|are:есть (мы)|was:был|be:быть|will:будет|has:имеет|so:поэтому|but:но|very:очень|there:там|called:называется|half:половина|lot:много|makes:делает|look:смотреть; искать|works:работает|cafe:кафе|last:прошлый|italy:Италия|some:немного; некоторые|can:можно; уметь|did:(вспомогательный глагол прошедшего времени)|then:потом; тогда|until:до|during:во время|not:не|me:мне; меня|you:ты; вы|him:ему; его".split("|").forEach(function (e) { var p = e.split(":"); FUNC[p[0]] = p[1]; });
 
 var VF = {};
-"wakes:he/she/it|drinks:he/she/it|goes:he/she/it|watches:he/she/it|lives:he/she/it|works:he/she/it|has:he/she/it|is:he/she/it|starts:he/she/it|finishes:he/she/it|sleeps:he/she/it|cooks:he/she/it|plays:he/she/it|wants:he/she/it|brings:he/she/it|asks:he/she/it|says:he/she/it|makes:he/she/it|called:v2/v3|visited:v2/v3|made:v2/v3|said:v2/v3|lost:v2/v3|helped:v2/v3|swam:v2|took:v2|forgot:v2|was:v2|raining:ing|planning:ing|learning:ing|saving:ing".split("|").forEach(function (e) { var p = e.split(":"); VF[p[0]] = p[1]; });
+"wakes:he/she/it|drinks:he/she/it|goes:he/she/it|watches:he/she/it|lives:he/she/it|works:he/she/it|has:he/she/it|is:he/she/it|starts:he/she/it|finishes:he/she/it|sleeps:he/she/it|cooks:he/she/it|plays:he/she/it|wants:he/she/it|brings:he/she/it|asks:he/she/it|says:he/she/it|makes:he/she/it|called:v2/v3|visited:v2/v3|made:v2/v3|said:v2/v3|lost:v2/v3|helped:v2/v3|swam:v2|took:v2|forgot:v2|was:v2|raining:ing|planning:ing|learning:ing|saving:ing|buys:he/she/it|waits:he/she/it|stays:he/she/it|explains:he/she/it|answers:he/she/it|leaves:he/she/it|grows:he/she/it|keeps:he/she/it|likes:he/she/it|sings:he/she/it|cleans:he/she/it|puts:he/she/it|opens:he/she/it|feels:he/she/it|loves:he/she/it|went:v2|had:v2|missed:v2/v3|walked:v2/v3|talked:v2/v3".split("|").forEach(function (e) { var p = e.split(":"); VF[p[0]] = p[1]; });
 
 function shuffle(a) {
   a = a.slice();
@@ -245,12 +396,133 @@ function show(pct, n, total, left, chk) {
   var html = '<p class="big">Ты отметил ' + n + ' слов из ' + total + ' — это ' + pct + '%.</p>';
   if (chk) html += '<p>Проверка: верно ' + chk[0] + ' из ' + chk[1] + '. Подтверждённый результат — около ' + est + '%.</p>';
   html += '<p>' + msg + '</p>';
-  if (left.length) html += '<p class="later">Слова, которые ждут своей очереди: ' + left.map(function (k) { var t = DICT[k] ? DICT[k][0] : FUNC[k]; return t ? k + " — " + t + (VF[k] ? " (" + VF[k] + ")" : "") : k; }).join("; ") + '.</p>';
+  if (left.length) html += '<p class="later">Слова, которые ждут своей очереди:</p>' + listHtml(left);
+  LAST = { text: idx + 1, pct: pct, n: n, total: total, chk: chk, est: est };
+  var added = saveWords(left);
+  html += '<p class="saved">' + (added ? "В словарь добавлено слов: " + added + ". " : "") + "Всего в словаре: " + loadVocab().length + ".</p>";
+  html += '<div class="row"><button class="main" id="gov">Мой словарь</button><button id="sendr">Отправить преподавателю</button></div><p class="later">В сообщение попадут имя, результат и слова словаря. Отправляешь его ты сам.</p>';
   resEl.innerHTML = html;
   resEl.style.display = "block";
+  document.getElementById("gov").onclick = showVocab;
+  document.getElementById("sendr").onclick = sendMsg;
 }
 
+var WRONG = {}, LAST = null, VKEY = "yke-vocab", NKEY = "yke-name", SKEY = "yke-seen";
+var TIPS = {
+  "v2": ["v2 — вторая форма глагола. Используется в прошедшем времени (past).", "She forgot the salt."],
+  "v2/v3": ["v2/v3 — у правильных глаголов вторая и третья формы совпадают (окончание -ed). v2 нужна для прошедшего времени.", "We helped her."],
+  "ing": ["ing — форма с окончанием -ing. Показывает действие в процессе в тот момент, о котором речь: сейчас, вчера или завтра.", "We are planning a trip. I was reading at eight."],
+  "he/she/it": ["he/she/it — в настоящем времени после he, she, it к глаголу добавляется -s.", "My sister works in a hospital."]
+};
+function tagHtml(g) { var a = TIPS[g]; return ' <span class="tg"><button type="button" class="tb">' + g + '</button><span class="tp" role="tooltip">' + a[0] + "<br><i>" + a[1] + "</i></span></span>"; }
+function listHtml(arr) {
+  return '<div class="wl">' + arr.map(function (k) { var t = DICT[k] ? DICT[k][0] : FUNC[k]; return '<span class="ww">' + k + "</span><span>" + (t || "") + "</span><span>" + (VF[k] ? tagHtml(VF[k]) : "") + "</span>"; }).join("") + "</div>";
+}
+function loadVocab() {
+  try { var v = JSON.parse(localStorage.getItem(VKEY) || "[]"); return Array.isArray(v) ? v.filter(function (e) { return e && DICT[e.w]; }) : []; } catch (e) { return []; }
+}
+function storeVocab(v) { try { localStorage.setItem(VKEY, JSON.stringify(v)); } catch (e) {} }
+function saveWords(words) {
+  var v = loadVocab(), added = 0;
+  words.forEach(function (k) {
+    if (!DICT[k]) return;
+    var ex = v.filter(function (e) { return e.w === k; })[0];
+    if (ex) { if (WRONG[k]) ex.s = "ошибся"; }
+    else { v.push({ w: k, s: WRONG[k] ? "ошибся" : "не отметил" }); added++; }
+  });
+  storeVocab(v);
+  return added;
+}
+function showVocab() {
+  document.getElementById("home").hidden = true;
+  document.getElementById("vocab").hidden = false;
+  renderVocab();
+  window.scrollTo(0, 0);
+}
+function hideVocab() { document.getElementById("vocab").hidden = true; document.getElementById("home").hidden = false; }
+function renderVocab() {
+  var v = loadVocab(), el = document.getElementById("vocab");
+  var h = '<button class="link" id="vback">‹ Назад</button><h1>Мой словарь</h1><p class="sub">' + v.length + " слов · хранятся на этом устройстве. Наведи или нажми на пометку, чтобы увидеть правило.</p>";
+  if (!v.length) h += '<p class="sub">Пока пусто. Слова появятся здесь после первого текста.</p>';
+  v.forEach(function (e, i) {
+    h += '<div class="vrow"><div><div class="vw">' + e.w + "</div><div>" + DICT[e.w][0] + '</div><div class="vmeta"><span class="badge ' + (e.s === "ошибся" ? "bw" : "bn") + '">' + e.s + "</span>" + (VF[e.w] ? tagHtml(VF[e.w]) : "") + '</div></div><button class="learn" data-i="' + i + '">Выучил</button></div>';
+  });
+  h += '<div class="row"><button class="main" id="vsend">Отправить преподавателю</button>' + (v.length ? '<button class="danger" id="vclear">Очистить всё</button>' : "") + '</div><p class="later">В сообщение попадут имя, результат и слова словаря. Отправляешь его ты сам.</p>';
+  el.innerHTML = h;
+  document.getElementById("vback").onclick = hideVocab;
+  document.getElementById("vsend").onclick = sendMsg;
+  var c = document.getElementById("vclear");
+  if (c) c.onclick = function () { if (confirm("Удалить все слова из словаря?")) { storeVocab([]); renderVocab(); } };
+  el.querySelectorAll(".learn").forEach(function (b) {
+    b.onclick = function () { var v2 = loadVocab(); v2.splice(+b.getAttribute("data-i"), 1); storeVocab(v2); renderVocab(); };
+  });
+}
+function sendMsg() {
+  var name = "";
+  try { name = localStorage.getItem(NKEY) || ""; } catch (e) {}
+  var v = loadVocab(), lines = ["Имя: " + (name || "не указано")];
+  if (LAST) {
+    lines.push("Текст №" + LAST.text + ": отмечено " + LAST.n + " из " + LAST.total + " (" + LAST.pct + "%)");
+    if (LAST.chk) lines.push("Проверка: верно " + LAST.chk[0] + " из " + LAST.chk[1] + ", подтверждённый результат около " + LAST.est + "%");
+  }
+  lines.push("Словарь (" + v.length + "):");
+  if (!v.length) lines.push("пусто");
+  v.forEach(function (e) { lines.push(e.w + " — " + DICT[e.w][0] + (e.s === "ошибся" ? " (ошибся)" : "")); });
+  var msg = lines.join("\n");
+  openSend(msg);
+}
+function openSend(msg) {
+  var ta = document.getElementById("smsg");
+  ta.value = msg;
+  document.getElementById("sstat").textContent = "";
+  document.getElementById("sshare").hidden = !navigator.share;
+  document.getElementById("sendbox").hidden = false;
+  ta.focus(); ta.select();
+}
+(function () {
+  var box = document.getElementById("sendbox"), ta = document.getElementById("smsg"), st = document.getElementById("sstat");
+  var okText = "Скопировано. Вставь в чат с преподавателем.", failText = "Не удалось. Выдели текст вручную и скопируй.";
+  document.getElementById("sclose").onclick = function () { box.hidden = true; };
+  document.getElementById("sshare").onclick = function () {
+    navigator.share({ text: ta.value }).catch(function () { st.textContent = "Меню не открылось. Нажми «Скопировать»."; });
+  };
+  document.getElementById("scopy").onclick = function () {
+    ta.focus(); ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    if (!ok && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(function () { st.textContent = okText; }, function () { st.textContent = failText; });
+      return;
+    }
+    st.textContent = ok ? okText : failText;
+  };
+})();
+(function () {
+  var w = document.getElementById("welcome"), seen = false, nm = "";
+  try { seen = localStorage.getItem(SKEY) === "1"; nm = localStorage.getItem(NKEY) || ""; } catch (e) {}
+  if (!seen) w.hidden = false;
+  document.getElementById("wname").value = nm;
+  document.getElementById("wgo").onclick = function () {
+    try { localStorage.setItem(NKEY, document.getElementById("wname").value.trim().slice(0, 40)); localStorage.setItem(SKEY, "1"); } catch (e) {}
+    w.hidden = true;
+  };
+})();
+document.getElementById("openvocab").onclick = showVocab;
+document.addEventListener("click", function (e) {
+  var b = e.target.closest ? e.target.closest(".tb") : null;
+  document.querySelectorAll(".tg.open").forEach(function (t) { if (!b || t !== b.parentNode) t.classList.remove("open"); });
+  if (!b) return;
+  var g = b.parentNode, p = g.querySelector(".tp");
+  g.classList.toggle("open");
+  p.style.left = "0"; p.style.top = ""; p.style.bottom = "";
+  if (g.classList.contains("open")) {
+    var r = p.getBoundingClientRect();
+    if (r.right > window.innerWidth - 8) p.style.left = -(r.right - window.innerWidth + 8) + "px";
+    if (r.top < 8) { p.style.bottom = "auto"; p.style.top = "100%"; }
+  }
+});
 function finish() {
+  WRONG = {};
   var words = textEl.querySelectorAll(".w"), total = words.length, n = 0, pool = [], left = [];
   words.forEach(function (w) {
     var k = w.textContent.toLowerCase();
@@ -272,7 +544,7 @@ function finish() {
       b.onclick = function () {
         if (box.dataset.d) return; box.dataset.d = 1;
         if (o === ans) { correct++; b.classList.add("ok"); }
-        else { b.classList.add("bad"); if (left.indexOf(k) < 0) left.push(k); box.querySelectorAll("button").forEach(function (x) { if (x.textContent === ans) x.classList.add("ok"); }); }
+        else { b.classList.add("bad"); if (left.indexOf(k) < 0) left.push(k); WRONG[k] = 1; box.querySelectorAll("button").forEach(function (x) { if (x.textContent === ans) x.classList.add("ok"); }); }
         done++;
         if (done === picks.length) setTimeout(function () { show(pct, n, total, left, [correct, picks.length]); }, 900);
       };
