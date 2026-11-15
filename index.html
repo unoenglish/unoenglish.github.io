@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ты уже знаешь английский</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+  --bg:#f6f4ee; --surface:#ffffff; --ink:#1d2b2a; --muted:#5d6b69;
+  --line:#d9d5c8; --accent:#1f7a5a; --accent-bg:#cfeedd; --accent-ink:#0d3d2b;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#141a19; --surface:#1c2423; --ink:#e8efed; --muted:#93a3a0;
+    --line:#2f3a38; --accent:#4cc79a; --accent-bg:#1f4a3a; --accent-ink:#c9f3e0;
+  }
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 Georgia,"Times New Roman",serif}
+main{max-width:640px;margin:0 auto;padding:28px 20px 48px}
+h1{font-size:28px;line-height:1.2;margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 24px;font-family:system-ui,sans-serif;font-size:15px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px}
+.meta{font:14px system-ui,sans-serif;color:var(--muted);margin-bottom:12px}
+.text{font-size:23px;line-height:2}
+.w{cursor:pointer;border-radius:5px;padding:1px 2px;transition:background .15s}
+.w:hover{background:var(--line)}
+.w.on{background:var(--accent-bg);color:var(--accent-ink)}
+.w:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;font-family:system-ui,sans-serif}
+button,select{font:16px system-ui,sans-serif;padding:10px 18px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+button.main{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.main{color:#0b1f18}}
+#result{margin-top:20px;padding:18px 20px;border-left:4px solid var(--accent);background:var(--surface);border-radius:0 10px 10px 0;display:none}
+#result .big{font-size:22px;margin:0 0 6px}
+#result p{margin:6px 0}
+.later{font-family:system-ui,sans-serif;font-size:15px;color:var(--muted)}
+.q{margin:14px 0;font-family:system-ui,sans-serif}.q button{margin:4px 6px 4px 0}
+.q button.ok{background:var(--accent-bg);border-color:var(--accent);color:var(--accent-ink)}
+.q button.bad{border-color:#c0504d}
+</style>
+</head>
+<body>
+<main>
+  <h1>Ты уже знаешь английский</h1>
+  <p class="sub">Прочитай текст и нажми на каждое слово, которое понимаешь. Нажми ещё раз, чтобы снять отметку.</p>
+  <div class="card">
+    <div class="meta" id="meta"></div>
+    <div class="text" id="text"></div>
+    <div class="row">
+      <button class="main" id="done">Готово</button>
+      <button id="next">Другой текст</button>
+    </div>
+  </div>
+  <div id="result" role="status" aria-live="polite"></div>
+</main>
+<script>
+var TEXTS = [
+"Anna wakes up at seven. She drinks coffee and goes to work by bus. In the evening she watches a film with her friend.",
+"Tom lives in a small flat near the park. He has a dog called Max. Every morning they walk together for half an hour.",
+"My sister works in a hospital. She starts early and often finishes late. On Sundays she sleeps a lot and cooks dinner for the family.",
+"Last summer we visited Italy. The weather was hot and the food was delicious. We swam in the sea and took many photos.",
+"I usually have breakfast at home, but today I am late. I buy a sandwich and a juice at the station and eat on the train.",
+"It is raining today, so we stay at home. My brother plays computer games and I read a book. Later we make pizza together.",
+"Maria is learning to cook. Yesterday she made soup, but she forgot the salt. Her husband said it was good anyway.",
+"There is a new cafe on our street. It is small, but the coffee is great. I meet my friends there every Friday after work.",
+"David wants to buy a new phone. His old phone is slow and the screen is broken. He is saving money every month.",
+"We are planning a trip to the mountains. We will take warm clothes, some food and a map. I hope the weather will be sunny.",
+"My neighbour is very friendly. She often brings us cakes and asks about our day. Yesterday she lost her keys, so we helped her look for them.",
+"Lena goes to the gym three times a week. She says it makes her feel strong and happy. After training she drinks a glass of water and goes home."
+];
+var idx = Math.floor(Math.random() * TEXTS.length);
+var textEl = document.getElementById("text");
+var metaEl = document.getElementById("meta");
+var resEl = document.getElementById("result");
+
+function render() {
+  textEl.innerHTML = "";
+  resEl.style.display = "none";
+  metaEl.textContent = "Текст " + (idx + 1) + " из " + TEXTS.length + " · уровень A2";
+  TEXTS[idx].split(/([A-Za-z’']+)/).forEach(function (part) {
+    if (/^[A-Za-z’']+$/.test(part)) {
+      var s = document.createElement("span");
+      s.className = "w"; s.textContent = part;
+      s.tabIndex = 0; s.setAttribute("role", "button");
+      s.onclick = function () { s.classList.toggle("on"); };
+      s.onkeydown = function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); s.classList.toggle("on"); }
+      };
+      textEl.appendChild(s);
+    } else {
+      textEl.appendChild(document.createTextNode(part));
+    }
+  });
+}
+
+var RAW = `wakes:просыпается|засыпает|ложится|одевается
+seven:семь|шесть|восемь|десять
+drinks:пьёт|ест|варит|покупает
+coffee:кофе|чай|сок|молоко
+goes:идёт|бежит|стоит|ждёт
+work:работа|школа|отдых|дом
+bus:автобус|трамвай|поезд|такси
+evening:вечер|утро|день|ночь
+watches:смотрит|слушает|читает|пишет
+film:фильм|книга|песня|игра
+friend:друг|брат|сосед|коллега
+friends:друзья|братья|соседи|коллеги
+lives:живёт|работает|учится|отдыхает
+small:маленький|большой|старый|новый
+flat:квартира|дом|комната|улица
+park:парк|сад|лес|площадь
+dog:собака|кошка|лошадь|птица
+morning:утро|вечер|день|ночь
+walk:гулять|бежать|плавать|ехать
+together:вместе|отдельно|снова|быстро
+hour:час|минута|день|неделя
+sister:сестра|мать|тётя|дочь
+hospital:больница|школа|магазин|офис
+starts:начинает|заканчивает|продолжает|бросает
+early:рано|поздно|быстро|вчера
+often:часто|редко|всегда|иногда
+finishes:заканчивает|начинает|продолжает|прерывает
+late:поздно|рано|медленно|сегодня
+sundays:воскресенье|суббота|понедельник|пятница
+sleeps:спит|ест|читает|отдыхает
+cooks:готовит|моет|покупает|ест
+dinner:ужин|завтрак|обед|перекус
+family:семья|друзья|соседи|коллеги
+summer:лето|зима|осень|весна
+visited:посетили|покинули|нашли|купили
+weather:погода|сезон|время|ветер
+hot:жаркий|холодный|тёплый|мокрый
+food:еда|вода|одежда|посуда
+delicious:вкусный|свежий|острый|дорогой
+swam:плавали|бегали|играли|ходили
+sea:море|река|озеро|горы
+took:взяли|потеряли|продали|показали
+many:много|мало|несколько|все
+photos:фотографии|открытки|подарки|билеты
+usually:обычно|иногда|никогда|редко
+breakfast:завтрак|обед|ужин|перекус
+home:дом|работа|магазин|школа
+buy:покупать|продавать|искать|терять
+sandwich:бутерброд|пирог|салат|суп
+juice:сок|чай|вода|молоко
+station:вокзал|аэропорт|рынок|площадь
+eat:есть|пить|готовить|покупать
+train:поезд|автобус|самолёт|трамвай
+today:сегодня|вчера|завтра|сейчас
+raining:идёт дождь|идёт снег|дует ветер|светит солнце
+stay:оставаться|уходить|ехать|возвращаться
+brother:брат|сын|отец|дядя
+plays:играет|смотрит|строит|рисует
+computer:компьютерный|настольный|детский|новый
+games:игры|фильмы|книги|песни
+read:читать|писать|слушать|искать
+book:книга|газета|письмо|карта
+later:позже|раньше|сейчас|всегда
+make:делать|ломать|брать|терять
+pizza:пицца|паста|суп|салат
+learning:учиться|уметь|хотеть|любить
+cook:готовить|мыть|покупать|есть
+yesterday:вчера|сегодня|завтра|давно
+made:сделала|купила|съела|подала
+soup:суп|салат|каша|пирог
+forgot:забыла|купила|взяла|нашла
+salt:соль|сахар|перец|мука
+husband:муж|брат|сын|друг
+said:сказал|спросил|ответил|попросил
+good:хороший|плохой|тёплый|новый
+anyway:всё равно|вдруг|потом|снова
+new:новый|старый|тихий|дешёвый
+street:улица|дорога|площадь|аллея
+great:отличный|обычный|слабый|горький
+meet:встречаться|прощаться|звонить|ждать
+friday:пятница|четверг|суббота|среда
+after:после|до|вместо|без
+wants:хочет|может|должен|любит
+phone:телефон|компьютер|планшет|часы
+old:старый|новый|сломанный|маленький
+slow:медленный|быстрый|тихий|громкий
+screen:экран|клавиатура|камера|батарея
+broken:сломанный|старый|грязный|дорогой
+saving:копить|тратить|занимать|брать
+money:деньги|карта|цена|счёт
+every:каждый|любой|другой|этот
+month:месяц|неделя|год|день
+planning:планировать|откладывать|отменять|ждать
+trip:поездка|урок|праздник|отпуск
+mountains:горы|леса|реки|озёра
+take:брать|давать|терять|искать
+warm:тёплый|холодный|мокрый|лёгкий
+clothes:одежда|обувь|сумки|подарки
+map:карта|билет|паспорт|книга
+hope:надеяться|бояться|знать|думать
+sunny:солнечный|дождливый|ветреный|облачный
+neighbour:сосед|друг|гость|врач
+friendly:дружелюбный|строгий|шумный|ленивый
+brings:приносит|уносит|покупает|готовит
+cakes:пирожные|конфеты|цветы|подарки
+asks:спрашивает|отвечает|говорит|просит
+day:день|утро|неделя|вечер
+lost:потеряла|нашла|забыла|купила
+keys:ключи|деньги|очки|документы
+helped:помогли|ждали|просили|советовали
+gym:спортзал|бассейн|магазин|стадион
+three:три|два|четыре|пять
+times:раза|дня|часа|месяца
+week:неделя|месяц|год|день
+says:говорит|спрашивает|думает|пишет
+feel:чувствовать|думать|видеть|слышать
+strong:сильный|слабый|усталый|быстрый
+happy:счастливый|грустный|сердитый|усталый
+training:тренировка|урок|экзамен|отпуск
+glass:стакан|чашка|бутылка|тарелка
+water:вода|сок|молоко|чай`;
+var DICT = {};
+RAW.split("\n").forEach(function (l) { var p = l.split(":"); DICT[p[0]] = p[1].split("|"); });
+
+var FUNC = {};
+"a:(артикль) один|an:(артикль) один|the:(артикль)|and:и|to:к; чтобы|at:в; у|by:на (транспорте); рядом|in:в|on:на|of:из; (принадлежность)|for:для; на|with:с|about:о; про|up:вверх|near:рядом с|she:она|he:он|her:её; ей|his:его|they:они|we:мы|i:я|my:мой|our:наш|it:это; оно|us:нас; нам|them:их; им|am:есть (я)|is:есть; является|are:есть (мы)|was:был|be:быть|will:будет|has:имеет|so:поэтому|but:но|very:очень|there:там|called:называется|half:половина|lot:много|makes:делает|look:смотреть; искать|works:работает|cafe:кафе|last:прошлый|italy:Италия|some:немного; некоторые".split("|").forEach(function (e) { var p = e.split(":"); FUNC[p[0]] = p[1]; });
+
+var VF = {};
+"wakes:he/she/it|drinks:he/she/it|goes:he/she/it|watches:he/she/it|lives:he/she/it|works:he/she/it|has:he/she/it|is:he/she/it|starts:he/she/it|finishes:he/she/it|sleeps:he/she/it|cooks:he/she/it|plays:he/she/it|wants:he/she/it|brings:he/she/it|asks:he/she/it|says:he/she/it|makes:he/she/it|called:v2/v3|visited:v2/v3|made:v2/v3|said:v2/v3|lost:v2/v3|helped:v2/v3|swam:v2|took:v2|forgot:v2|was:v2|raining:ing|planning:ing|learning:ing|saving:ing".split("|").forEach(function (e) { var p = e.split(":"); VF[p[0]] = p[1]; });
+
+function shuffle(a) {
+  a = a.slice();
+  for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+
+function show(pct, n, total, left, chk) {
+  var est = chk ? Math.round(pct * chk[0] / chk[1]) : pct;
+  var msg;
+  if (est >= 80) msg = "Отлично! Ты уже читаешь свободно.";
+  else if (est >= 50) msg = "Хороший результат. Остальные слова — твоя точка роста. Проверим их ещё раз?";
+  else msg = "Хорошее начало. Давай разберём слова, которые ждут своей очереди.";
+  var html = '<p class="big">Ты отметил ' + n + ' слов из ' + total + ' — это ' + pct + '%.</p>';
+  if (chk) html += '<p>Проверка: верно ' + chk[0] + ' из ' + chk[1] + '. Подтверждённый результат — около ' + est + '%.</p>';
+  html += '<p>' + msg + '</p>';
+  if (left.length) html += '<p class="later">Слова, которые ждут своей очереди: ' + left.map(function (k) { var t = DICT[k] ? DICT[k][0] : FUNC[k]; return t ? k + " — " + t + (VF[k] ? " (" + VF[k] + ")" : "") : k; }).join("; ") + '.</p>';
+  resEl.innerHTML = html;
+  resEl.style.display = "block";
+}
+
+function finish() {
+  var words = textEl.querySelectorAll(".w"), total = words.length, n = 0, pool = [], left = [];
+  words.forEach(function (w) {
+    var k = w.textContent.toLowerCase();
+    if (w.classList.contains("on")) { n++; if (DICT[k] && pool.indexOf(k) < 0) pool.push(k); }
+    else if (left.indexOf(k) < 0) left.push(k);
+  });
+  var pct = Math.round(n / total * 100);
+  if (pct < 50 || !pool.length) { show(pct, n, total, left, null); return; }
+  var count = Math.min(pool.length, Math.ceil(n * 0.15));
+  var picks = shuffle(pool).slice(0, count), correct = 0, done = 0;
+  resEl.innerHTML = '<p class="big">Быстрая проверка: выбери перевод.</p>';
+  resEl.style.display = "block";
+  picks.forEach(function (k) {
+    var box = document.createElement("div"); box.className = "q";
+    var h = document.createElement("p"); h.innerHTML = "<b>" + k + "</b>"; box.appendChild(h);
+    var ans = DICT[k][0];
+    shuffle(DICT[k]).forEach(function (o) {
+      var b = document.createElement("button"); b.textContent = o;
+      b.onclick = function () {
+        if (box.dataset.d) return; box.dataset.d = 1;
+        if (o === ans) { correct++; b.classList.add("ok"); }
+        else { b.classList.add("bad"); if (left.indexOf(k) < 0) left.push(k); box.querySelectorAll("button").forEach(function (x) { if (x.textContent === ans) x.classList.add("ok"); }); }
+        done++;
+        if (done === picks.length) setTimeout(function () { show(pct, n, total, left, [correct, picks.length]); }, 900);
+      };
+      box.appendChild(b);
+    });
+    resEl.appendChild(box);
+  });
+}
+
+document.getElementById("done").onclick = finish;
+document.getElementById("next").onclick = function () { idx = (idx + 1) % TEXTS.length; render(); };
+render();
+</script>
+</body>
+</html>
